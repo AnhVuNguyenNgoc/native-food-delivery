@@ -5,14 +5,17 @@ import {
   DrawerContentScrollView,
   createDrawerNavigator,
 } from '@react-navigation/drawer';
+import {connect} from 'react-redux';
 import {COLORS, FONTS, SIZES, constants, dummyData, icons} from '../constants';
 import {MainLayout} from '../screens';
+import {setSelectedTab} from '../stores/tab/tabAction';
 
 const Drawer = createDrawerNavigator();
 
-const CustomDrawerItem = ({label, icon}) => {
+const CustomDrawerItem = ({label, icon, isFocused, onPress}) => {
   return (
     <TouchableOpacity
+      onPress={onPress}
       style={{
         flexDirection: 'row',
         height: 40,
@@ -20,6 +23,7 @@ const CustomDrawerItem = ({label, icon}) => {
         alignItems: 'center',
         paddingLeft: SIZES.radius,
         borderRadius: SIZES.base,
+        backgroundColor: isFocused ? COLORS.transparentBlack1 : null,
       }}>
       <Image
         source={icon}
@@ -32,7 +36,7 @@ const CustomDrawerItem = ({label, icon}) => {
   );
 };
 
-const CustomDrawerContent = ({navigation}) => {
+const CustomDrawerContent = ({navigation, selectedTab, setSelectedTab}) => {
   return (
     <DrawerContentScrollView
       scrollEnabled={true}
@@ -84,10 +88,21 @@ const CustomDrawerContent = ({navigation}) => {
             flex: 1,
             marginTop: SIZES.padding,
           }}>
-          <CustomDrawerItem label={constants.screens.home} icon={icons.home} />
+          <CustomDrawerItem
+            label={constants.screens.home}
+            icon={icons.home}
+            isFocused={selectedTab == constants.screens.home}
+            onPress={() => {
+              setSelectedTab(constants.screens.home);
+            }}
+          />
           <CustomDrawerItem
             label={constants.screens.my_wallet}
             icon={icons.wallet}
+            isFocused={selectedTab == constants.screens.my_wallet}
+            onPress={() => {
+              setSelectedTab(constants.screens.my_wallet);
+            }}
           />
           <CustomDrawerItem
             label={constants.screens.notification}
@@ -130,7 +145,7 @@ const CustomDrawerContent = ({navigation}) => {
 //   return <CustomDrawerContent navigation={props.navigation} />;
 // };
 
-const CustomDrawer = () => {
+const CustomDrawer = ({selectedTab, setSelectedTab}) => {
   return (
     <View style={styles.container}>
       <Drawer.Navigator
@@ -143,7 +158,13 @@ const CustomDrawer = () => {
         }}
         initialRouteName="MainLayout"
         drawerContent={props => {
-          return <CustomDrawerContent navigation={props.navigation} />;
+          return (
+            <CustomDrawerContent
+              navigation={props.navigation}
+              selectedTab={selectedTab}
+              setSelectedTab={setSelectedTab}
+            />
+          );
         }}>
         <Drawer.Screen name="MainLayout">
           {props => <MainLayout {...props} />}
@@ -171,4 +192,18 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CustomDrawer;
+function mapStateToProps(state) {
+  return {
+    selectedTab: state.tabReducer.selectedTab,
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    setSelectedTab: selectedTab => {
+      return dispatch(setSelectedTab(selectedTab));
+    },
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(CustomDrawer);

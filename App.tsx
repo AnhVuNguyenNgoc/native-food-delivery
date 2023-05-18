@@ -12,19 +12,28 @@ import {createStackNavigator} from '@react-navigation/stack';
 
 import CustomDrawer from './navigation/CustomDrawer';
 
+import {Provider} from 'react-redux';
+import {applyMiddleware, legacy_createStore as createStore} from 'redux';
+import thunk from 'redux-thunk';
+import rootReducer from './stores/rootReducer';
+
+const store = createStore(rootReducer, applyMiddleware(thunk));
+
 const Stack = createStackNavigator();
 
 function App(): JSX.Element {
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
-        initialRouteName={'Home'}>
-        <Stack.Screen name="Home" component={CustomDrawer} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Provider store={store}>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+          }}
+          initialRouteName={'Home'}>
+          <Stack.Screen name="Home" component={CustomDrawer} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </Provider>
   );
 }
 
