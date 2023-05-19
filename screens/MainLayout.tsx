@@ -1,12 +1,15 @@
 import {useDrawerProgress} from '@react-navigation/drawer';
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {
+  GestureResponderEvent,
   Image,
+  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import {FlatList} from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, {
   interpolate,
@@ -18,17 +21,24 @@ import {connect} from 'react-redux';
 import {Header} from '../components';
 import {COLORS, FONTS, SIZES, constants, icons} from '../constants';
 import {setSelectedTab} from '../stores/tab/tabAction';
+import CartTab from './Cart/CartTab';
+import Favourite from './Favourite/Favourite';
+import Home from './Home/Home';
+import Notification from './Notification/Notification';
+import Search from './Search/Search';
 
-const TabButton = ({
-  label,
-  icon,
-  isFocused,
-  onPress,
-  outerContainerStyle,
-  innerContainerStyle,
-}) => {
+type TabButtonArgs = {
+  label: String;
+  icon: ImageSourcePropType;
+  isFocused: Boolean;
+  onPress: ((event: GestureResponderEvent) => void) | undefined;
+  outerContainerStyle: Object;
+  innerContainerStyle: Object;
+};
+
+const TabButton = (args: TabButtonArgs) => {
   return (
-    <TouchableWithoutFeedback onPress={onPress}>
+    <TouchableWithoutFeedback onPress={args.onPress}>
       <Animated.View
         style={[
           {
@@ -36,30 +46,19 @@ const TabButton = ({
             alignItems: 'center',
             justifyContent: 'center',
           },
-          outerContainerStyle,
+          args.outerContainerStyle,
         ]}>
-        <Animated.View
-          style={[
-            {
-              flexDirection: 'row',
-              width: '80%',
-              height: 50,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 25,
-            },
-            innerContainerStyle,
-          ]}>
+        <Animated.View style={[styles.outerStyle, args.innerContainerStyle]}>
           <Image
-            source={icon}
+            source={args.icon}
             style={{
               width: 20,
               height: 20,
-              tintColor: isFocused ? COLORS.white : COLORS.gray,
+              tintColor: args.isFocused ? COLORS.white : COLORS.gray,
             }}
           />
 
-          {isFocused && (
+          {args.isFocused && (
             <Text
               numberOfLines={1}
               style={{
@@ -67,7 +66,7 @@ const TabButton = ({
                 color: COLORS.white,
                 ...FONTS.h3,
               }}>
-              {label}
+              {args.label}
             </Text>
           )}
         </Animated.View>
@@ -79,7 +78,7 @@ const TabButton = ({
 const MainLayout = ({navigation, selectedTab, setSelectedTab}) => {
   const progress = useDrawerProgress();
   const animatedStyles = useAnimatedStyle(() => {
-    const scale = interpolate(progress.value, [0, 1], [1, 0.85]);
+    const scale = interpolate(progress.value, [0, 1], [1, 0.8]);
     const borderRadius = interpolate(progress.value, [0, 1], [0, 26]);
 
     return {
@@ -87,6 +86,8 @@ const MainLayout = ({navigation, selectedTab, setSelectedTab}) => {
       transform: [{scale: scale}],
     };
   });
+
+  const flatListRef = useRef();
 
   return (
     <Animated.View style={[styles.container, animatedStyles]}>
@@ -98,8 +99,31 @@ const MainLayout = ({navigation, selectedTab, setSelectedTab}) => {
       />
 
       {/* Content */}
-      <View style={{flex: 1}}>
-        <Text>MainLayout</Text>
+      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+        <FlatList
+          ref={flatListRef}
+          horizontal
+          scrollEnabled={false}
+          pagingEnabled
+          snapToAlignment="center"
+          snapToInterval={SIZES.width}
+          showsHorizontalScrollIndicator={false}
+          data={constants.bottom_tabs}
+          keyExtractor={item => `${item.id}`}
+          renderItem={({item, index}) => {
+            return (
+              <View style={{height: SIZES.height, width: SIZES.width}}>
+                {item.label === constants.screens.home && <Home />}
+                {item.label === constants.screens.search && <Search />}
+                {item.label === constants.screens.cart && <CartTab />}
+                {item.label === constants.screens.favourite && <Favourite />}
+                {item.label === constants.screens.notification && (
+                  <Notification />
+                )}
+              </View>
+            );
+          }}
+        />
       </View>
 
       {/* Footer */}
@@ -118,13 +142,17 @@ const MainLayout = ({navigation, selectedTab, setSelectedTab}) => {
         />
 
         {/* Tabs */}
-        <Footer selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+        <Footer
+          selectedTab={selectedTab}
+          setSelectedTab={setSelectedTab}
+          flatListRef={flatListRef}
+        />
       </View>
     </Animated.View>
   );
 };
 
-const Footer = ({selectedTab, setSelectedTab}) => {
+const Footer = ({selectedTab, setSelectedTab, flatListRef}) => {
   // Reanimated Shared value
   const homeTabFlex = useSharedValue(1);
   const homeTabColor = useSharedValue(COLORS.white);
@@ -199,14 +227,22 @@ const Footer = ({selectedTab, setSelectedTab}) => {
 
   useEffect(() => {
     if (selectedTab === constants.screens.home) {
-      homeTabFlex.value = withTiming(4, {duration: 500});
-      homeTabColor.value = withTiming(COLORS.primary, {duration: 500});
+      flatListRef?.current?.scrollToIndex({
+        index: 0,
+        animated: false,
+      });
+      homeTabFlex.value = withTiming(4, {duration: 100});
+      homeTabColor.value = withTiming(COLORS.primary, {duration: 100});
     } else {
-      homeTabFlex.value = withTiming(1, {duration: 500});
-      homeTabColor.value = withTiming(COLORS.white, {duration: 500});
+      homeTabFlex.value = withTiming(1, {duration: 100});
+      homeTabColor.value = withTiming(COLORS.white, {duration: 100});
     }
 
     if (selectedTab === constants.screens.search) {
+      flatListRef?.current?.scrollToIndex({
+        index: 1,
+        animated: false,
+      });
       searchTabFlex.value = withTiming(4, {duration: 500});
       searchTabColor.value = withTiming(COLORS.primary, {duration: 500});
     } else {
@@ -215,6 +251,10 @@ const Footer = ({selectedTab, setSelectedTab}) => {
     }
 
     if (selectedTab === constants.screens.cart) {
+      flatListRef?.current?.scrollToIndex({
+        index: 2,
+        animated: false,
+      });
       cartTabFlex.value = withTiming(4, {duration: 500});
       cartTabColor.value = withTiming(COLORS.primary, {duration: 500});
     } else {
@@ -223,6 +263,10 @@ const Footer = ({selectedTab, setSelectedTab}) => {
     }
 
     if (selectedTab === constants.screens.favourite) {
+      flatListRef?.current?.scrollToIndex({
+        index: 3,
+        animated: false,
+      });
       favoriteTabFlex.value = withTiming(4, {duration: 500});
       favoriteTabColor.value = withTiming(COLORS.primary, {duration: 500});
     } else {
@@ -231,13 +275,31 @@ const Footer = ({selectedTab, setSelectedTab}) => {
     }
 
     if (selectedTab === constants.screens.notification) {
+      flatListRef?.current?.scrollToIndex({
+        index: 4,
+        animated: false,
+      });
       notificationTabFlex.value = withTiming(4, {duration: 500});
       notificationTabColor.value = withTiming(COLORS.primary, {duration: 500});
     } else {
       notificationTabFlex.value = withTiming(1, {duration: 500});
       notificationTabColor.value = withTiming(COLORS.white, {duration: 500});
     }
-  });
+  }, [
+    cartTabColor,
+    cartTabFlex,
+    favoriteTabColor,
+    favoriteTabFlex,
+    flatListRef,
+    homeTabColor,
+    homeTabFlex,
+    notificationTabColor,
+    notificationTabFlex,
+    searchTabColor,
+    searchTabFlex,
+    selectedTab,
+  ]);
+
   return (
     <View style={styles.footer}>
       <TabButton
@@ -287,6 +349,7 @@ const Footer = ({selectedTab, setSelectedTab}) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -313,6 +376,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderBottomLeftRadius: 20,
+  },
+  outerStyle: {
+    flexDirection: 'row',
+    width: '80%',
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 25,
   },
 });
 
