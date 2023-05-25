@@ -1,7 +1,12 @@
-import React, {useEffect, useState} from 'react';
+import * as Sentry from '@sentry/react-native';
+import {useCallback, useEffect, useState} from 'react';
 import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {FlatList, TextInput} from 'react-native-gesture-handler';
-import {HorizontalFoodCard, VerticalFoodCard} from '../../components';
+import {
+  FilterModal,
+  HorizontalFoodCard,
+  VerticalFoodCard,
+} from '../../components';
 import {COLORS, FONTS, SIZES, dummyData, icons} from '../../constants';
 
 const Section = ({title, onPress, children}) => {
@@ -9,7 +14,11 @@ const Section = ({title, onPress, children}) => {
     <View>
       <View style={styles.section}>
         <Text style={{flex: 1, fontWeight: 'bold', fontSize: 17}}>{title}</Text>
-        <TouchableOpacity onPress={() => onPress}>
+        <TouchableOpacity
+          onPress={() => {
+            console.log('Error Sentry');
+            Sentry.captureException(new Error('First error'));
+          }}>
           <Text
             style={{
               flex: 1,
@@ -38,11 +47,9 @@ const Home = () => {
 
   const [populars, setPopular] = useState([]);
 
-  useEffect(() => {
-    handleChangeCategory(selectedCategoryId, selectedMenuType);
-  }, [selectedCategoryId, selectedMenuType]);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
-  const handleChangeCategory = (categoryId, menuTypeId) => {
+  const handleChangeCategory = useCallback((categoryId, menuTypeId) => {
     // Retrieve the recommend menu
     let selectedRecommend = dummyData.menu.find(
       item => item.name === 'Recommended',
@@ -70,7 +77,12 @@ const Home = () => {
     setMenuList(
       selectedMenu?.list.filter(item => item.categories.includes(categoryId)),
     );
-  };
+  }, []);
+
+  useEffect(() => {
+    handleChangeCategory(selectedCategoryId, selectedMenuType);
+  }, [handleChangeCategory, selectedCategoryId, selectedMenuType]);
+
   const renderSearch = () => {
     return (
       <View
@@ -101,7 +113,7 @@ const Home = () => {
         />
 
         {/* Filter Button */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowFilterModal(true)}>
           <Image
             source={icons.filter}
             style={{width: 20, height: 20, tintColor: COLORS.black}}
@@ -150,7 +162,12 @@ const Home = () => {
 
   const renderRecommendSection = () => {
     return (
-      <Section title="Recommended" onPress={() => console.log('Recommended')}>
+      <Section
+        title="Recommended"
+        onPress={() => {
+          console.log('Error Sentry');
+          // Sentry.captureException(new Error('First error'));
+        }}>
         <FlatList
           data={populars}
           keyExtractor={item => `${item.id}`}
@@ -255,6 +272,15 @@ const Home = () => {
       }}>
       {renderSearch()}
 
+      {/* FilterModal */}
+
+      {showFilterModal && (
+        <FilterModal
+          isVisible={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+        />
+      )}
+
       {/* List */}
       <FlatList
         data={menuList}
@@ -276,6 +302,10 @@ const Home = () => {
               {renderMenuTypes()}
             </View>
           );
+        }}
+        style={{flex: 1}}
+        contentContainerStyle={{
+          paddingBottom: 200,
         }}
         renderItem={({item, index}) => {
           return (

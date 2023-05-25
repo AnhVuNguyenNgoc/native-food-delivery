@@ -1,3 +1,4 @@
+import {Header} from '@components';
 import {useDrawerProgress} from '@react-navigation/drawer';
 import React, {useEffect, useRef} from 'react';
 import {
@@ -18,7 +19,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import {connect} from 'react-redux';
-import {Header} from '../components';
 import {COLORS, FONTS, SIZES, constants, icons} from '../constants';
 import {setSelectedTab} from '../stores/tab/tabAction';
 import CartTab from './Cart/CartTab';
@@ -231,11 +231,11 @@ const Footer = ({selectedTab, setSelectedTab, flatListRef}) => {
         index: 0,
         animated: false,
       });
-      homeTabFlex.value = withTiming(4, {duration: 100});
-      homeTabColor.value = withTiming(COLORS.primary, {duration: 100});
+      homeTabFlex.value = withTiming(4, {duration: 500});
+      homeTabColor.value = withTiming(COLORS.primary, {duration: 500});
     } else {
-      homeTabFlex.value = withTiming(1, {duration: 100});
-      homeTabColor.value = withTiming(COLORS.white, {duration: 100});
+      homeTabFlex.value = withTiming(1, {duration: 500});
+      homeTabColor.value = withTiming(COLORS.white, {duration: 500});
     }
 
     if (selectedTab === constants.screens.search) {
